@@ -19,6 +19,8 @@ const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
 const GHOST_RELEASE_INTERVAL_MS = 1500;
+const GHOST_DOOR_COLS = [13, 14]; // celdas de la puerta del pen (fila 12)
+const GHOST_PEN_EXIT_Y = 11;      // fila justo encima de la puerta: "fuera del pen"
 
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
@@ -53,6 +55,7 @@ function createGame() {
       kind: g.kind,
       released: false,
       releaseAt: now + index * GHOST_RELEASE_INTERVAL_MS,
+      outside: false,
     } ) ),
   };
 }
@@ -81,6 +84,8 @@ function canMove( grid, x, y, dir, actor ) {
   const ty = y + d.y;
   // Tunel: salir por un borde en la fila del tunel siempre es valido.
   if ( ty === TUNNEL_ROW && ( tx < 0 || tx >= grid[ 0 ].length ) ) return true;
+  // Puerta de la pen de un solo sentido para fantasmas: nunca hacia abajo.
+  if ( actor === 'ghost' && dir === 'down' && grid[ ty ][ tx ] === 3 ) return false;
   return !isWall( grid, tx, ty, actor );
 }
 
@@ -124,6 +129,20 @@ function movePacman( game ) {
 function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
+
+  // Modo salida: ignorar la IA y forzar el camino hacia la puerta del pen.
+  if ( !g.outside ) {
+    if ( g.x < GHOST_DOOR_COLS[ 0 ] ) {
+      g.dir = 'right';
+    } else if ( g.x > GHOST_DOOR_COLS[ 1 ] ) {
+      g.dir = 'left';
+    } else {
+      g.dir = 'up';
+    }
+    // Al alcanzar la fila justo encima de la puerta, termina el modo salida.
+    if ( g.y === GHOST_PEN_EXIT_Y ) g.outside = true;
+    return;
+  }
 
   if ( !g.patrolCornerIndex ) {
     g.patrolCornerIndex = 0;
@@ -231,6 +250,7 @@ function resetPositions( game ) {
     g.dir = 'up';
     g.released = false;
     g.releaseAt = now + i * GHOST_RELEASE_INTERVAL_MS;
+    g.outside = false;
     g.patrolCornerIndex = 0;
   } );
 }
