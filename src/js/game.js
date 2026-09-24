@@ -19,6 +19,8 @@ const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
 const GHOST_RELEASE_INTERVAL_MS = 1500;
+const GHOST_DOOR_COLS = [13, 14]; // celdas de la puerta del pen (fila 12)
+const GHOST_PEN_EXIT_Y = 11;      // fila justo encima de la puerta: "fuera del pen"
 
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
@@ -53,6 +55,7 @@ function createGame() {
       kind: g.kind,
       released: false,
       releaseAt: now + index * GHOST_RELEASE_INTERVAL_MS,
+      outside: false,
     } ) ),
   };
 }
@@ -231,6 +234,7 @@ function resetPositions( game ) {
     g.dir = 'up';
     g.released = false;
     g.releaseAt = now + i * GHOST_RELEASE_INTERVAL_MS;
+    g.outside = false;
     g.patrolCornerIndex = 0;
   } );
 }
