@@ -10,7 +10,7 @@ const DIRS = {
 };
 const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 
-const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
+const AMBUSHER_AIM_STRIDE = 4; // celdas por delante de Pac-Man
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
 const GHOST_RELEASE_INTERVAL_MS = 1500;
@@ -129,6 +129,23 @@ function decideGhost( game, g ) {
   if ( g.kind === 'hunter' ) {
     const px = Math.round( p.x );
     const py = Math.round( p.y );
+    let best = choices[ 0 ];
+    let bestDist = Infinity;
+    for ( const dir of choices ) {
+      const d = DIRS[ dir ];
+      const nx = g.x + d.x;
+      const ny = g.y + d.y;
+      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
+      if ( dist < bestDist ) {
+        bestDist = dist;
+        best = dir;
+      }
+    }
+    g.dir = best;
+  } else if ( g.kind === 'ambusher' ) {
+    const pd = DIRS[ p.dir ] || { x: 0, y: 0 };
+    const px = Math.round( p.x ) + pd.x * AMBUSHER_AIM_STRIDE;
+    const py = Math.round( p.y ) + pd.y * AMBUSHER_AIM_STRIDE;
     let best = choices[ 0 ];
     let bestDist = Infinity;
     for ( const dir of choices ) {
