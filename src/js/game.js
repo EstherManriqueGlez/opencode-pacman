@@ -128,6 +128,20 @@ function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
 
+  // Modo salida: ignorar la IA y forzar el camino hacia la puerta del pen.
+  if ( !g.outside ) {
+    if ( g.x < GHOST_DOOR_COLS[ 0 ] ) {
+      g.dir = 'right';
+    } else if ( g.x > GHOST_DOOR_COLS[ 1 ] ) {
+      g.dir = 'left';
+    } else {
+      g.dir = 'up';
+    }
+    // Al alcanzar la fila justo encima de la puerta, termina el modo salida.
+    if ( g.y === GHOST_PEN_EXIT_Y ) g.outside = true;
+    return;
+  }
+
   if ( !g.patrolCornerIndex ) {
     g.patrolCornerIndex = 0;
   }
