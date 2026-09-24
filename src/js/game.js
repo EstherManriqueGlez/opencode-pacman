@@ -148,6 +148,15 @@ function decideGhost( game, g ) {
 }
 
 function moveGhost( game, g ) {
+  const now = performance.now();
+  if ( !g.released ) {
+    if ( now >= g.releaseAt ) {
+      g.released = true;
+    } else {
+      return;
+    }
+  }
+
   const grid = game.grid;
   const width = grid[ 0 ].length;
 
@@ -170,10 +179,13 @@ function resetPositions( game ) {
   p.y = PACMAN_START.y;
   p.dir = 'left';
   p.nextDir = null;
+  const now = performance.now();
   game.ghosts.forEach( ( g, i ) => {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
+    g.released = false;
+    g.releaseAt = now + i * GHOST_RELEASE_INTERVAL_MS;
   } );
 }
 
