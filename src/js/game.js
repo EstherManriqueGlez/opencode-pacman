@@ -15,6 +15,7 @@ const PATROL_CORNERS = [
   { x: 1, y: 1 },
   { x: 26, y: 29 },
 ];
+const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
 const GHOST_RELEASE_INTERVAL_MS = 1500;
