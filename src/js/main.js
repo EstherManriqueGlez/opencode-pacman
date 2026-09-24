@@ -39,15 +39,36 @@ function startGame() {
 
 if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );
 
-function loop() {
-  frame++;
+const TICK_MS = 1000 / 60;
+let lastTime = performance.now();
+let accumulator = 0;
+
+function loop( now ) {
+  const dt = Math.min( now - lastTime, 250 );
+  lastTime = now;
+  accumulator += dt;
+
   if ( game.state === 'playing' ) {
-    update( game );
-    if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
-    else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
+    while ( accumulator >= TICK_MS ) {
+      update( game );
+      accumulator -= TICK_MS;
+      if ( game.state === 'won' ) {
+        showOverlay( 'GANASTE', 'win', 'Reiniciar' );
+        accumulator = 0;
+        break;
+      } else if ( game.state === 'lost' ) {
+        showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
+        accumulator = 0;
+        break;
+      }
+    }
+  } else {
+    accumulator = 0;
   }
+
+  frame++;
   draw( ctx, game, frame );
   requestAnimationFrame( loop );
 }
 
-loop();
+requestAnimationFrame( loop );
