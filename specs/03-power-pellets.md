@@ -1,6 +1,6 @@
 # SPEC 03 — Power Pellets y fantasmas vulnerables
 
-> **Estado:** Approved
+> **Estado:** Implemented
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-10-01
 > **Objetivo:** Añadir Power Pellets que permiten a Pac-Man comer fantasmas vulnerables durante una ventana temporal.

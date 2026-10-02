@@ -1,6 +1,6 @@
 # SPEC 02 — Salida de los fantasmas de la pen
 
-> **Estado:** Approved
+> **Estado:** Implemented
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-09-23
 > **Objetivo:** Hacer que cada fantasma salga de la pen por la puerta al liberarse, sin quedar atrapado en la jaula, y que no pueda volver a entrar.
