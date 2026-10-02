@@ -17,6 +17,9 @@ const PATROL_CORNERS = [
 ];
 const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
+const POWER_PELLET_SCORE = 50;
+const EAT_GHOST_SCORE = 200;
+const FRIGHTENED_DURATION_MS = 6000;
 
 const GHOST_RELEASE_INTERVAL_MS = 1500;
 const GHOST_DOOR_COLS = [13, 14]; // celdas de la puerta del pen (fila 12)
@@ -29,8 +32,8 @@ function createGame() {
   // La celda de inicio de Pacman arranca sin dot.
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
-  let dots = 0;
-  for ( const row of grid ) for ( const v of row ) if ( v === 2 ) dots++;
+  let food = 0;
+  for ( const row of grid ) for ( const v of row ) if ( v === 2 || v === 4 ) food++;
 
   const now = performance.now();
 
@@ -38,7 +41,8 @@ function createGame() {
     state: 'start',
     score: 0,
     lives: 3,
-    dotsRemaining: dots,
+    dotsRemaining: food,
+    frightenedUntil: 0,
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -56,6 +60,7 @@ function createGame() {
       released: false,
       releaseAt: now + index * GHOST_RELEASE_INTERVAL_MS,
       outside: false,
+      eatenDuringFrightened: false,
     } ) ),
   };
 }
@@ -110,11 +115,17 @@ function movePacman( game ) {
       p.dir = p.nextDir;
       p.nextDir = null;
     }
-    // Comer dot.
-    if ( grid[ p.y ][ p.x ] === 2 ) {
+    const tile = grid[ p.y ][ p.x ];
+    // Comer dot o Power Pellet.
+    if ( tile === 2 ) {
       grid[ p.y ][ p.x ] = 0;
       game.score += 10;
       game.dotsRemaining--;
+    } else if ( tile === 4 ) {
+      grid[ p.y ][ p.x ] = 0;
+      game.score += POWER_PELLET_SCORE;
+      game.dotsRemaining--;
+      game.frightenedUntil = performance.now() + FRIGHTENED_DURATION_MS;
     }
     // Si no puede seguir, se detiene en la celda.
     if ( !canMove( grid, p.x, p.y, p.dir, 'pacman' ) ) return;
@@ -216,6 +227,7 @@ function moveGhost( game, g ) {
   if ( !g.released ) {
     if ( now >= g.releaseAt ) {
       g.released = true;
+      g.eatenDuringFrightened = false;
     } else {
       return;
     }
@@ -239,6 +251,7 @@ function moveGhost( game, g ) {
 
 function resetPositions( game ) {
   const p = game.pacman;
+  game.frightenedUntil = 0;
   p.x = PACMAN_START.x;
   p.y = PACMAN_START.y;
   p.dir = 'left';
@@ -251,6 +264,7 @@ function resetPositions( game ) {
     g.released = false;
     g.releaseAt = now + i * GHOST_RELEASE_INTERVAL_MS;
     g.outside = false;
+    g.eatenDuringFrightened = false;
     g.patrolCornerIndex = 0;
   } );
 }
@@ -259,12 +273,30 @@ function collides( a, b ) {
   return Math.abs( a.x - b.x ) < 0.5 && Math.abs( a.y - b.y ) < 0.5;
 }
 
+function isGhostVulnerable( game, g, now ) {
+  return now < game.frightenedUntil && g.outside && !g.eatenDuringFrightened;
+}
+
 function update( game ) {
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
-  for ( const g of game.ghosts ) {
+  const now = performance.now();
+  for ( let i = 0; i < game.ghosts.length; i++ ) {
+    const g = game.ghosts[ i ];
     if ( collides( game.pacman, g ) ) {
+      if ( isGhostVulnerable( game, g, now ) ) {
+        game.score += EAT_GHOST_SCORE;
+        g.x = GHOST_STARTS[ i ].x;
+        g.y = GHOST_STARTS[ i ].y;
+        g.dir = 'up';
+        g.released = false;
+        g.releaseAt = now + i * GHOST_RELEASE_INTERVAL_MS;
+        g.outside = false;
+        g.eatenDuringFrightened = true;
+        g.patrolCornerIndex = 0;
+        break;
+      }
       game.lives--;
       if ( game.lives <= 0 ) {
         game.state = 'lost';
